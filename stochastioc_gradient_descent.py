@@ -3,6 +3,7 @@ from random import seed
 from random import randrange
 from csv import reader
 from math import exp
+import time
  
 # Load a CSV file
 def load_csv(filename):
@@ -107,6 +108,7 @@ def logistic_regression(train, test, l_rate, n_epoch):
  
 # Test the logistic regression algorithm on the diabetes dataset
 seed(1)
+start_time = time.time()
 # load and prepare data
 filename = 'diabetes.csv'
 dataset = load_csv(filename)
@@ -116,9 +118,11 @@ for i in range(len(dataset[0])):
 minmax = dataset_minmax(dataset)
 normalize_dataset(dataset, minmax)
 # evaluate algorithm
-n_folds = 5
+n_folds = 20
 l_rate = 0.1
 n_epoch = 100
 scores = evaluate_algorithm(dataset, logistic_regression, n_folds, l_rate, n_epoch)
 print('Scores: %s' % scores)
+print("--- %s epoch ---" % (n_epoch))
+print("--- %s seconds ---" % (time.time() - start_time))
 print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
