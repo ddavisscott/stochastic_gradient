@@ -15,6 +15,23 @@ def load_csv(filename):
 				continue
 			dataset.append(row)
 	return dataset
+# Sigmoid Function
+def sig(w,x):
+    d=np.dot(x,w)
+    t_pred = 1/(1+np.exp(-d))
+    return t_pred
+
+# Log Likelihood
+def loglikelihood(w,x,t):
+    l=0
+    for i in range(len(t)):
+        l += t[i]*np.log(sig(w,x[i,:]))+(1-t[i])*np.log(1-sig(w,x[i,:]))
+    return l
+
+# Derivative of the Loss Function
+def dLdW(w,x,t):
+    t_pred = sig(w,x)
+    return (t_pred-t)*x
  
 # Convert string column to float
 def str_column_to_float(dataset, column):
@@ -104,6 +121,7 @@ def logistic_regression(train, test, l_rate, n_epoch):
 		yhat = predict(row, coef)
 		yhat = round(yhat)
 		predictions.append(yhat)
+	print('Scores: %s' % coef)
 	return(predictions)
  
 # Test the logistic regression algorithm on the diabetes dataset
@@ -118,7 +136,7 @@ for i in range(len(dataset[0])):
 minmax = dataset_minmax(dataset)
 normalize_dataset(dataset, minmax)
 # evaluate algorithm
-n_folds = 20
+n_folds = 4
 l_rate = 0.1
 n_epoch = 100
 scores = evaluate_algorithm(dataset, logistic_regression, n_folds, l_rate, n_epoch)
