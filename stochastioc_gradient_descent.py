@@ -1,25 +1,15 @@
-# Logistic Regression on Diabetes Dataset
-from random import seed
-from random import randrange
-from csv import reader
-from math import exp
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
-import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import make_classification
+from sklearn.metrics import mean_squared_error
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 
- 
-# Load a CSV file
-def load_csv(filename):
-	dataset = list()
-	with open(filename, 'r') as file:
-		csv_reader = reader(file)
-		for row in csv_reader:
-			if not row:
-				continue
-			dataset.append(row)
-	return dataset
 # Sigmoid Function
 def sig(w,x):
     d=np.dot(x,w)
@@ -37,115 +27,74 @@ def loglikelihood(w,x,t):
 def dLdW(w,x,t):
     t_pred = sig(w,x)
     return (t_pred-t)*x
- 
-# Convert string column to float
-def str_column_to_float(dataset, column):
-	for row in dataset:
-		row[column] = float(row[column].strip())
- 
-# Find the min and max values for each column
-def dataset_minmax(dataset):
-	minmax = list()
-	for i in range(len(dataset[0])):
-		col_values = [row[i] for row in dataset]
-		value_min = min(col_values)
-		value_max = max(col_values)
-		minmax.append([value_min, value_max])
-	return minmax
- 
-# Rescale dataset columns to the range 0-1
-def normalize_dataset(dataset, minmax):
-	for row in dataset:
-		for i in range(len(row)):
-			row[i] = (row[i] - minmax[i][0]) / (minmax[i][1] - minmax[i][0])
- 
-# Split a dataset into k folds
-def cross_validation_split(dataset, n_folds):
-	dataset_split = list()
-	dataset_copy = list(dataset)
-	fold_size = int(len(dataset) / n_folds)
-	for i in range(n_folds):
-		fold = list()
-		while len(fold) < fold_size:
-			index = randrange(len(dataset_copy))
-			fold.append(dataset_copy.pop(index))
-		dataset_split.append(fold)
-	return dataset_split
- 
-# Calculate accuracy percentage
-def accuracy_metric(actual, predicted):
-	correct = 0
-	for i in range(len(actual)):
-		if actual[i] == predicted[i]:
-			correct += 1
-	return correct / float(len(actual)) * 100.0
- 
-# Evaluate an algorithm using a cross validation split
-def evaluate_algorithm(dataset, algorithm, n_folds, *args):
-	folds = cross_validation_split(dataset, n_folds)
-	scores = list()
-	for fold in folds:
-		train_set = list(folds)
-		train_set.remove(fold)
-		train_set = sum(train_set, [])
-		test_set = list()
-		for row in fold:
-			row_copy = list(row)
-			test_set.append(row_copy)
-			row_copy[-1] = None
-		predicted = algorithm(train_set, test_set, *args)
-		actual = [row[-1] for row in fold]
-		accuracy = accuracy_metric(actual, predicted)
-		scores.append(accuracy)
-	return scores
- 
-# Make a prediction with coefficients
-def predict(row, coefficients):
-	yhat = coefficients[0]
-	for i in range(len(row)-1):
-		yhat += coefficients[i + 1] * row[i]
-	return 1.0 / (1.0 + exp(-yhat))
- 
-# Estimate logistic regression coefficients using stochastic gradient descent
-def coefficients_sgd(train, l_rate, n_epoch):
-	coef = [0.0 for i in range(len(train[0]))]
-	for epoch in range(n_epoch):
-		for row in train:
-			yhat = predict(row, coef)
-			error = row[-1] - yhat
-			coef[0] = coef[0] + l_rate * error * yhat * (1.0 - yhat)
-			for i in range(len(row)-1):
-				coef[i + 1] = coef[i + 1] + l_rate * error * yhat * (1.0 - yhat) * row[i]
-	return coef
- 
-# Logistic Regression Algorithm With Stochastic Gradient Descent
-def logistic_regression(train, test, l_rate, n_epoch):
-	predictions = list()
-	coef = coefficients_sgd(train, l_rate, n_epoch)
-	for row in test:
-		yhat = predict(row, coef)
-		yhat = round(yhat)
-		predictions.append(yhat)
-	print('Scores: %s' % coef)
-	return(predictions)
- 
-# Test the logistic regression algorithm on the diabetes dataset
-seed(1)
-start_time = time.time()
-# load and prepare data
-filename = 'diabetes.csv'
-dataset = load_csv(filename)
-for i in range(len(dataset[0])):
-	str_column_to_float(dataset, i)
-# normalize
-minmax = dataset_minmax(dataset)
-normalize_dataset(dataset, minmax)
-# evaluate algorithm
-n_folds = 4
-l_rate = 0.1
-n_epoch = 100
-scores = evaluate_algorithm(dataset, logistic_regression, n_folds, l_rate, n_epoch)
-print('Scores: %s' % scores)
-print("--- %s epoch ---" % (n_epoch))
-print("--- %s seconds ---" % (time.time() - start_time))
-print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
+
+# Read datasets and make normalized version
+dataset = pd.read_csv('diabetes_2.csv')
+scaler = MinMaxScaler()
+scaler.fit(dataset)
+scaler.data_max_
+column_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome']
+normalized_dataset = pd.DataFrame(scaler.transform(dataset), columns=column_names)
+
+# Split Unnormalized Data
+X = dataset.drop('Outcome', axis=1)
+t = dataset['Outcome']
+train_X, test_X, train_t, test_t = train_test_split(X, t, test_size=0.2, stratify=t)
+del dataset, X, t
+column_names = ['Bias', 'Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+train_X = pd.DataFrame(np.concatenate((np.ones(train_X.shape[0]).reshape(-1,1), train_X.values), axis=1),columns = column_names)
+train_t = pd.DataFrame(train_t.values,columns = ['Outcome'])
+test_X = pd.DataFrame(np.concatenate((np.ones(test_X.shape[0]).reshape(-1,1), test_X.values), axis=1),columns = column_names)
+test_t = pd.DataFrame(test_t.values,columns = ['Outcome'])
+
+train_X = train_X.values
+train_t = train_t.values
+test_X = test_X.values
+test_t = test_t.values
+
+l = train_X.shape[0]
+X = np.concatenate((train_X,test_X), axis=0)
+scaler.fit(X)
+scaler.data_max_
+X = scaler.transform(X)
+norm_train_X = X[0:l,:]
+norm_test_X = X[l:,:]
+norm_train_t = train_t
+norm_test_t = test_t
+
+# Initialize weights and Likelihood values
+w = np.random.random(train_X.shape[1])
+likelihood = np.array([])
+ind = np.array([])
+
+# Stochastic Gradient Descent
+threshold = 1e-4
+nsteps = train_t.shape[0]
+alpha = 1e-4
+l_old = -np.inf
+l_new = -np.random.random(1)
+start = time.time()
+epochs = 0
+while (abs(l_old - l_new) > threshold) or (np.isnan(l_old) or np.isnan(l_new)):
+    for i in range(nsteps):
+        w = w - alpha * dLdW(w.reshape(-1), train_X[i,:], train_t[i])
+    epochs += 1
+    ind = np.append(ind,epochs)
+    l_old = l_new
+    l_new = loglikelihood(w.reshape(-1),train_X,train_t)/nsteps
+    likelihood = np.append(likelihood,l_new)
+end = time.time()
+runtime = end-start
+pred_train_t = (sig(w.reshape(-1),train_X) > 0.5).astype(int)
+pred_test_t = (sig(w.reshape(-1),test_X) > 0.5).astype(int)
+plt.plot(ind,likelihood,'-')
+print('Epochs:', epochs)
+print('Runtime:', runtime)
+print('Log Likelihood of Training Data:', loglikelihood(w.reshape(-1), train_X, train_t)/nsteps)
+print('Log Likelihood of Test Set:', loglikelihood(w.reshape(-1), test_X, test_t)/nsteps)
+print('Error on Training Data:', mean_squared_error(train_t, pred_train_t))
+print('Error on Test Data:', mean_squared_error(test_t, pred_test_t))
+w = pd.DataFrame(w.reshape(1,-1),columns = column_names)
+
+
+del likelihood, ind, threshold, nsteps, alpha, epochs, l_old, l_new, i, pred_train_t, pred_test_t
