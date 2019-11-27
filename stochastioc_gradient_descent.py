@@ -3,7 +3,12 @@ from random import seed
 from random import randrange
 from csv import reader
 from math import exp
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 import time
+import numpy as np
+
  
 # Load a CSV file
 def load_csv(filename):
