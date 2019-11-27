@@ -95,6 +95,43 @@ print('Log Likelihood of Test Set:', loglikelihood(w.reshape(-1), test_X, test_t
 print('Error on Training Data:', mean_squared_error(train_t, pred_train_t))
 print('Error on Test Data:', mean_squared_error(test_t, pred_test_t))
 w = pd.DataFrame(w.reshape(1,-1),columns = column_names)
+w.head()
+del likelihood, ind, threshold, nsteps, alpha, epochs, l_old, l_new, i, pred_train_t, pred_test_t
 
+# Initialize weights and Likelihood values
+w = np.random.random(norm_train_X.shape[1])
+likelihood = np.array([])
+ind = np.array([])
+
+# Stochastic Gradient Descent
+threshold = 1e-4
+nsteps = norm_train_t.shape[0]
+alpha = 1e-4
+epochs = 0
+l_old = -np.inf
+l_new = -np.random.random(1)
+start = time.time()
+# for e in range(200):
+while (abs(l_old - l_new) > threshold) or (np.isnan(l_old) or np.isnan(l_new)):
+    for i in range(nsteps):
+        w = w - alpha * dLdW(w.reshape(-1), norm_train_X[i,:], norm_train_t[i])
+    epochs += 1
+    ind = np.append(ind,epochs)
+    l_old = l_new
+    l_new = loglikelihood(w.reshape(-1),norm_train_X,norm_train_t)/nsteps
+    likelihood = np.append(likelihood,l_new)
+end = time.time()
+print(l_old, l_new)
+print('Runtime:', end-start)
+pred_train_t = (sig(w.reshape(-1),norm_train_X) > 0.5).astype(int)
+pred_test_t = (sig(w.reshape(-1),norm_test_X) > 0.5).astype(int)
+plt.plot(ind,likelihood,'-')
+print('Epochs:', epochs)
+print('Log Likelihood of Training Data:', loglikelihood(w.reshape(-1), norm_train_X, norm_train_t)/nsteps)
+print('Log Likelihood of Test Set:', loglikelihood(w.reshape(-1), norm_test_X, norm_test_t)/nsteps)
+print('Error on Training Data:', mean_squared_error(norm_train_t, pred_train_t))
+print('Error on Test Data:', mean_squared_error(norm_test_t, pred_test_t))
+w = pd.DataFrame(w.reshape(1,-1),columns = column_names)
+w.head()
 
 del likelihood, ind, threshold, nsteps, alpha, epochs, l_old, l_new, i, pred_train_t, pred_test_t
